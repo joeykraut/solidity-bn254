@@ -114,21 +114,31 @@ library BN254 {
         return BaseField.wrap(P_MOD - (BaseField.unwrap(fq) % P_MOD));
     }
 
-    /// @return r the sum of two points of G1
-    function add(G1Point memory p1, G1Point memory p2) internal view returns (G1Point memory r) {
-        uint256[4] memory input;
-        input[0] = BaseField.unwrap(p1.x);
-        input[1] = BaseField.unwrap(p1.y);
-        input[2] = BaseField.unwrap(p2.x);
-        input[3] = BaseField.unwrap(p2.y);
-        bool success;
+    /// @notice add two points on the BN254 curve
+    /// @dev This implementation is taken from `solidity-bn254` but serializes calldata more efficiently
+    /// @param p1 The first point
+    /// @param p2 The second point
+    /// @return r The sum of the two points
+    function add(BN254.G1Point memory p1, BN254.G1Point memory p2)
+        internal
+        view
+        returns (BN254.G1Point memory r)
+    {
         assembly {
-            success := staticcall(sub(gas(), 2000), 6, input, 0xc0, r, 0x60)
+            // Allocate memory for the input array
+            let freePtr := mload(0x40)
+            mstore(0x40, add(freePtr, 0x80))
+
+            mstore(freePtr, mload(p1))
+            mstore(add(freePtr, 0x20), mload(add(p1, 0x20)))
+            mstore(add(freePtr, 0x40), mload(p2))
+            mstore(add(freePtr, 0x60), mload(add(p2, 0x20)))
+            let success := staticcall(sub(gas(), 2000), 6, freePtr, 0x80, r, 0x40)
+
             // Use "invalid" to make gas estimation work
             switch success
             case 0 { revert(0, 0) }
         }
-        require(success, "Bn254: group addition failed!");
     }
 
     /// @notice add for BaseField
@@ -151,21 +161,29 @@ library BN254 {
         return ScalarField.wrap(mulmod(ScalarField.unwrap(a), ScalarField.unwrap(b), R_MOD));
     }
 
-    /// @return r the product of a point on G1 and a scalar, i.e.
-    /// p == p.mul(1) and p.add(p) == p.mul(2) for all points p.
-    function scalarMul(G1Point memory p, ScalarField s) internal view returns (G1Point memory r) {
-        uint256[3] memory input;
-        input[0] = BaseField.unwrap(p.x);
-        input[1] = BaseField.unwrap(p.y);
-        input[2] = ScalarField.unwrap(s);
-        bool success;
+    /// @notice multiply a point on the BN254 curve by a scalar
+    /// @dev This implementation is taken from `solidity-bn254` but serializes calldata more efficiently
+    /// @param p The point to multiply
+    /// @param s The scalar to multiply by
+    /// @return r The product of the point and the scalar
+    function scalarMul(BN254.G1Point memory p, BN254.ScalarField s)
+        internal
+        view
+        returns (BN254.G1Point memory r)
+    {
         assembly {
-            success := staticcall(sub(gas(), 2000), 7, input, 0x80, r, 0x60)
+            let freePtr := mload(0x40)
+            mstore(0x40, add(freePtr, 0x60))
+
+            mstore(freePtr, mload(p))
+            mstore(add(freePtr, 0x20), mload(add(p, 0x20)))
+            mstore(add(freePtr, 0x40), s)
+            let success := staticcall(sub(gas(), 2000), 7, freePtr, 0x60, r, 0x40) // 6000 gas
+
             // Use "invalid" to make gas estimation work
             switch success
             case 0 { revert(0, 0) }
         }
-        require(success, "Bn254: scalar mul failed!");
     }
 
     /// @dev Multi-scalar Mulitiplication (MSM)
