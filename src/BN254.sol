@@ -141,6 +141,15 @@ library BN254 {
         }
     }
 
+    /// @notice subtract one point from another
+    function sub(BN254.G1Point memory p1, BN254.G1Point memory p2)
+        internal
+        view
+        returns (BN254.G1Point memory r)
+    {
+        return add(p1, negate(p2));
+    }
+
     /// @notice add for BaseField
     function add(BaseField a, BaseField b) internal pure returns (BaseField) {
         return BaseField.wrap(addmod(BaseField.unwrap(a), BaseField.unwrap(b), P_MOD));
@@ -149,6 +158,11 @@ library BN254 {
     /// @notice add for ScalarField
     function add(ScalarField a, ScalarField b) internal pure returns (ScalarField) {
         return ScalarField.wrap(addmod(ScalarField.unwrap(a), ScalarField.unwrap(b), R_MOD));
+    }
+
+    /// @notice sub for ScalarField
+    function sub(ScalarField a, ScalarField b) internal pure returns (ScalarField) {
+        return BN254.add(a, BN254.negate(b));
     }
 
     /// @notice mul for BaseField
