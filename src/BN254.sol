@@ -160,9 +160,19 @@ library BN254 {
         return ScalarField.wrap(addmod(ScalarField.unwrap(a), ScalarField.unwrap(b), R_MOD));
     }
 
+    /// @notice add for uint256
+    function add(ScalarField a, uint256 b) internal pure returns (ScalarField) {
+        return ScalarField.wrap(addmod(ScalarField.unwrap(a), b, R_MOD));
+    }
+
     /// @notice sub for ScalarField
     function sub(ScalarField a, ScalarField b) internal pure returns (ScalarField) {
         return BN254.add(a, BN254.negate(b));
+    }
+
+    /// @notice sub for uint256
+    function sub(ScalarField a, uint256 b) internal pure returns (ScalarField) {
+        return sub(a, ScalarField.wrap(b));
     }
 
     /// @notice mul for BaseField
@@ -173,6 +183,11 @@ library BN254 {
     /// @notice mul for ScalarField
     function mul(ScalarField a, ScalarField b) internal pure returns (ScalarField) {
         return ScalarField.wrap(mulmod(ScalarField.unwrap(a), ScalarField.unwrap(b), R_MOD));
+    }
+
+    /// @notice mul for uint256
+    function mul(ScalarField a, uint256 b) internal pure returns (ScalarField) {
+        return ScalarField.wrap(mulmod(ScalarField.unwrap(a), b, R_MOD));
     }
 
     /// @notice multiply a point on the BN254 curve by a scalar
